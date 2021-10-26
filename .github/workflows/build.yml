@@ -1,4 +1,4 @@
-name: Build Backend
+name: Build & Deploy Container
 
 on:
   workflow_dispatch:
