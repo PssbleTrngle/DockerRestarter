@@ -47,11 +47,13 @@ app.post(
    async (req, res, next) => {
       try {
          const data = req.body as Data
+         console.group(`Received update event for ${data.repository.repo_name}:${data.push_data.tag}`)
 
          const matching = await findMatchingContainers(data)
 
          if (matching.length > 0) {
             await pullImage(data.repository.repo_name, data.push_data.tag)
+            console.log('Pulled Image')
 
             console.group('Restarting containers')
             await Promise.all(matching.map(restartContainer))
@@ -71,6 +73,8 @@ app.post(
                   }))
                )
             }
+         } else {
+            console.log('No containers using this image are running')
          }
 
          res.status(200).json({
@@ -79,6 +83,8 @@ app.post(
          })
       } catch (e) {
          next(e)
+      } finally {
+         console.groupEnd()
       }
    }
 )
