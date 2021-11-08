@@ -7,7 +7,11 @@ export async function findMatchingContainers({ push_data, repository }: Data) {
    const containers = await docker.listContainers()
 
    const image = `${repository.repo_name}:${push_data.tag}`
-   const matching = containers.filter(({ Image }) => {
+   const matching = containers.filter(({ Image, Labels, Names }) => {
+      if (Labels['restarter.ignore'] === 'true') {
+         console.log(`Ignoring ${Names[0]}`)
+         return false
+      }
       if (Image === image) return true
       return push_data.tag === 'latest' && Image === repository.repo_name
    })
