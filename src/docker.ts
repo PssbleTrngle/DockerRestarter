@@ -52,11 +52,14 @@ export async function restartContainer({ Id, Names, Ports, NetworkSettings }: Co
    const created = await docker.createContainer({
       name,
       ...Config,
-      NetworkingConfig: {
-         EndpointsConfig: NetworkSettings.Networks,
-      },
       HostConfig: { PortBindings },
    })
+
+   await Promise.all(
+      Object.entries(NetworkSettings.Networks).map(async ([key, network]) => {
+         await docker.getNetwork(network.NetworkID).connect({ ...network, Container: created.id })
+      })
+   )
 
    await created.start()
 
