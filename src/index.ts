@@ -61,14 +61,17 @@ app.post(
             console.groupEnd()
             console.log(`Recreated ${matching.length} containers`)
 
+            const url = data.repository.repo_url.replace(/\s+/g, '')
+
             if (config.discord_webhook) {
                await sendEmbeds(
                   matching.map(container => ({
                      color: 0x1cc93c,
+                     url,
                      title: `Updated ${container.Names[0]}`,
                      description: `
-                     Container was recreated using image **${container.Image}**
-                     Pushed by ${data.push_data.pusher} at ${new Date(data.push_data.pushed_at * 1000).toLocaleString('en-GB')}
+                     Container was recreated using image [\`${container.Image}\`](${url})
+                     Pushed by **${data.push_data.pusher}** at ${new Date(data.push_data.pushed_at * 1000).toLocaleString('en-GB')}
                   `,
                   }))
                )

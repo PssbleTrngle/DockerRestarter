@@ -1,17 +1,32 @@
 import Docker, { ContainerInfo } from 'dockerode'
+import { existsSync, readFileSync } from 'fs'
+import { join } from 'path'
 import { Data } from '.'
 import config from './config'
 const docker = new Docker()
+
+const hostnameFile = join('etc', 'hostname')
+const hostname = existsSync(hostnameFile) ? readFileSync(hostnameFile).toString() : null
 
 export async function findMatchingContainers({ push_data, repository }: Data) {
    const containers = await docker.listContainers()
 
    const image = `${repository.repo_name}:${push_data.tag}`
-   const matching = containers.filter(({ Image, Labels, Names }) => {
-      if (Labels['restarter.ignore'] === 'true') {
+
+   const ignoredContainers = containers
+      .filter(({ Labels, Id }) => {
+         if (Labels['restarter.ignore']?.toLowerCase() === 'true') return true
+         if (Id === hostname) return true
+         return false
+      })
+      .map(c => c.Id)
+
+   const matching = containers.filter(({ Image, Names, Id }) => {
+      if (ignoredContainers.includes(Id)) {
          console.log(`Ignoring ${Names[0]}`)
          return false
       }
+
       if (Image === image) return true
       return push_data.tag === 'latest' && Image === repository.repo_name
    })
